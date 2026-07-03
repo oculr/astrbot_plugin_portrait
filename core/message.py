@@ -66,6 +66,7 @@ class _SQLiteMessageCache:
     def __init__(self):
         self._db = sqlite3.connect(":memory:")
         self._db.row_factory = sqlite3.Row
+        self._closed = False
         self._db.executescript(
             """
             CREATE TABLE IF NOT EXISTS group_state (
@@ -89,6 +90,15 @@ class _SQLiteMessageCache:
             ON group_messages(group_id, sender_id, message_time DESC, id DESC);
             """
         )
+
+    def close(self):
+        if self._closed:
+            return
+        self._db.close()
+        self._closed = True
+
+    def __del__(self):
+        self.close()
 
     def clear(self):
         with self._db:
@@ -190,12 +200,16 @@ class _SQLiteMessageCache:
         rows = self._db.execute(
             """
             SELECT text
-            FROM group_messages
-            WHERE group_id = ?
-              AND sender_id = ?
-              AND COALESCE(text, '') <> ''
-            ORDER BY message_time DESC, id DESC
-            LIMIT ?
+            FROM (
+                SELECT text, message_time, id
+                FROM group_messages
+                WHERE group_id = ?
+                  AND sender_id = ?
+                  AND COALESCE(text, '') <> ''
+                ORDER BY message_time DESC, id DESC
+                LIMIT ?
+            ) recent_messages
+            ORDER BY message_time ASC, id ASC
             """,
             (group_id, user_id, limit),
         ).fetchall()
@@ -246,6 +260,9 @@ class MessageManager:
 
     def clear_cache(self):
         self._cache.clear()
+
+    def close(self):
+        self._cache.close()
 
     @staticmethod
     def _log_phase_page(

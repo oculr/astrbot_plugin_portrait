@@ -12,6 +12,10 @@ from .core.message import MessageManager
 from .core.profile_service import UserProfileService
 from .core.llm import LLMService
 from .core.entry import EntryService
+from .core.pillowmd_emoji import (
+    patch_pillowmd_with_pilmoji,
+    release_pillowmd_render_resources,
+)
 
 class PortrayalPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
@@ -21,6 +25,7 @@ class PortrayalPlugin(Star):
         self.profile_service = UserProfileService()
         self.entry_service = EntryService(self.cfg)
         self.llm = LLMService(context, self.cfg)
+        self.pillowmd = None
         self.style = None
 
     async def initialize(self):
@@ -28,12 +33,14 @@ class PortrayalPlugin(Star):
         try:
             import pillowmd
 
+            self.pillowmd = pillowmd
+            patch_pillowmd_with_pilmoji(pillowmd)
             self.style = pillowmd.LoadMarkdownStyles(self.cfg.style_dir)
         except Exception as e:
             logger.error(f"无法加载pillowmd样式：{e}")
 
     async def terminate(self):
-        self.msg.clear_cache()
+        self.msg.close()
 
     @staticmethod
     def get_at_id(event: AiocqhttpMessageEvent) -> str | None:
@@ -47,12 +54,19 @@ class PortrayalPlugin(Star):
         )
 
     async def send(self, event: AiocqhttpMessageEvent, message: str):
+        render_result = None
         if self.style:
-            img = await self.style.AioRender(text=message, useImageUrl=True)
-            img_path = img.Save(self.cfg.cache_dir)
-            await event.send(event.image_result(str(img_path))) 
+            try:
+                render_result = await self.style.AioRender(
+                    text=message,
+                    useImageUrl=True,
+                )
+                img_path = render_result.Save(self.cfg.cache_dir)
+                await event.send(event.image_result(str(img_path)))
+            finally:
+                release_pillowmd_render_resources(self.pillowmd, render_result)
         else:
-            await event.send(event.plain_result(message)) 
+            await event.send(event.plain_result(message))
         event.stop_event()
 
     @filter.platform_adapter_type(filter.PlatformAdapterType.AIOCQHTTP)

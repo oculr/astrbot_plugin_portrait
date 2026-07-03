@@ -173,9 +173,31 @@ class MessageManagerTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             result.texts,
-            ["msg-300", "msg-299", "msg-298", "msg-297", "msg-296"],
+            ["msg-296", "msg-297", "msg-298", "msg-299", "msg-300"],
         )
         self.assertEqual(event.bot.api.calls[:2], [0, 298])
+
+    async def test_returns_latest_subset_but_ordered_from_old_to_new(self):
+        module, _logger = load_message_module()
+        manager = module.MessageManager(DummyConfig(max_msg_count=3))
+        event = FakeEvent(
+            {
+                0: [
+                    make_message(305, 305),
+                    make_message(304, 304),
+                    make_message(303, 303),
+                ],
+                303: [
+                    make_message(303, 303),
+                    make_message(302, 302),
+                    make_message(301, 301),
+                ],
+            }
+        )
+
+        result = await manager.get_user_texts(event, "10001", max_rounds=2)
+
+        self.assertEqual(result.texts, ["msg-303", "msg-304", "msg-305"])
 
     async def test_reuses_group_cache_for_another_user_and_stops_on_overlap(self):
         module, logger = load_message_module()
@@ -212,8 +234,8 @@ class MessageManagerTests(unittest.IsolatedAsyncioTestCase):
             second_event, "10002", max_rounds=3
         )
 
-        self.assertEqual(first_result.texts, ["msg-300", "msg-298"])
-        self.assertEqual(second_result.texts, ["msg-302", "msg-299"])
+        self.assertEqual(first_result.texts, ["msg-298", "msg-300"])
+        self.assertEqual(second_result.texts, ["msg-299", "msg-302"])
         self.assertEqual(first_event.bot.api.calls, [0])
         self.assertEqual(second_event.bot.api.calls, [0])
         self.assert_cache_logs_are_normalized(logger)
@@ -282,7 +304,7 @@ class MessageManagerTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             result.texts,
-            ["msg-297", "msg-296"],
+            ["msg-296", "msg-297"],
         )
         self.assertEqual(second_event.bot.api.calls, [0, 298])
         self.assert_cache_logs_are_normalized(logger)
