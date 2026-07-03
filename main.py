@@ -91,7 +91,7 @@ class PortrayalPlugin(Star):
 
         yield event.plain_result(
             f"已从{result.scanned_messages}条群消息中提取到"
-            f"{result.count}条{profile.nickname}的聊天记录，正在分析{cmd}..."
+            f"{len(result.texts)}条{profile.nickname}的聊天记录，正在分析{cmd}..."
         )
 
         # ---------- LLM ----------
