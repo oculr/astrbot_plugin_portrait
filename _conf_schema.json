@@ -65,7 +65,7 @@
     "load_builtin_prompt": {
         "description": "加载内置提示词条目",
         "type": "bool",
-        "hint": "是否加载插件内置的提示词条目，文件位置: data/plugins/astrbot_plugin_portrayal/default_prompt.yaml",
+        "hint": "是否加载插件内置的提示词条目，文件位置: ./default_prompt.yaml",
         "default": true
     },
     "entry_storage": {
