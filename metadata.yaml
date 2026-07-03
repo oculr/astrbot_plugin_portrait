@@ -4,4 +4,4 @@ desc: 爬取群友的聊天记录，进而用llm分析群友画像
 help: 略
 version: v99.99.99
 author: oculr
-repo: https://github.com/oculr/astrbot_plugin_portrayal
+repo: https://github.com/oculr/astrbot_plugin_portrait
