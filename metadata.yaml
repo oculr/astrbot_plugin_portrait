@@ -1,7 +1,7 @@
-name: astrbot_plugin_portrayal
+name: astrbot_plugin_portrait
 display_name: 人物画像
 desc: 爬取群友的聊天记录，进而用llm分析群友画像
 help: 略
-version: v1.1.0
-author: Zhalslar
-repo: https://github.com/Zhalslar/astrbot_plugin_portrayal
+version: v99.99.99
+author: oculr
+repo: https://github.com/oculr/astrbot_plugin_portrayal
