@@ -111,6 +111,7 @@ class PortrayalPlugin(Star):
         # ---------- LLM ----------
         try:
             content = await self.llm.generate_portrait(result.texts, profile, prompt)
+            content = "{} 的分析结果\n".format(profile.nickname) + content
         except Exception as e:
             logger.error(f"LLM 调用失败：{e}")
             yield event.plain_result(f"分析失败：{e}")
